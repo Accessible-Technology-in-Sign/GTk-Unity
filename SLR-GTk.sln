@@ -1,0 +1,29 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mediapipe.Runtime", "Mediapipe.Runtime.csproj", "{d3e695bd-ba57-e450-ec74-5441fc0cad01}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mediapipe.Tests.EditMode", "Mediapipe.Tests.EditMode.csproj", "{ffc7cead-d86c-cd9e-a207-c635737436e4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TensorFlowLite", "TensorFlowLite.csproj", "{4e99b292-c4a6-a516-71f9-8081bf15e76a}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Assembly-CSharp", "Assembly-CSharp.csproj", "{52386a92-810d-6132-5da3-fa40c8598996}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{d3e695bd-ba57-e450-ec74-5441fc0cad01}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{d3e695bd-ba57-e450-ec74-5441fc0cad01}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ffc7cead-d86c-cd9e-a207-c635737436e4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ffc7cead-d86c-cd9e-a207-c635737436e4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4e99b292-c4a6-a516-71f9-8081bf15e76a}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4e99b292-c4a6-a516-71f9-8081bf15e76a}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{52386a92-810d-6132-5da3-fa40c8598996}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{52386a92-810d-6132-5da3-fa40c8598996}.Debug|Any CPU.Build.0 = Debug|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
