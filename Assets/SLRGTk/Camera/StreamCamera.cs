@@ -16,9 +16,12 @@ namespace SLRGTk.Camera {
 
         // Inherit callback manager functionality
         private Material _webcamControlShader;
+        //a WebCamTexture essentially is the raw video feed from the device camera
         private WebCamTexture _webCamTexture;
         private WebCamDevice? _currentDevice;
+        //temporary storage for pixel data when transferring image between camera and memory
         private Color32[] _textureTransferBuffer;
+
 
         public bool polling = true;
         public CameraSelector cameraSelector = CameraSelector.FirstFrontCamera;
@@ -27,9 +30,12 @@ namespace SLRGTk.Camera {
             _webcamControlShader = new Material(Shader.Find("Nana/WebcamControlShader"));
         }
 
+        // essentially sets up the camera
         private void UpdateProps() {
+            // checks to see if there are any cameras
             if (WebCamTexture.devices.Length <= 0) throw new Exception("Camera not connected");
 
+            // loops through each camera device and assigns _currentDevice accordingly
             foreach (var device in WebCamTexture.devices) {
                 switch (cameraSelector) {
                     case CameraSelector.FirstFrontCamera:
@@ -47,12 +53,14 @@ namespace SLRGTk.Camera {
                         break;
                 }
             }
-
+            // the default value for _currentDevice (wouldn't it be better to instantiate _currentDevice to this first to make sure we don't use goto)
             _currentDevice = WebCamTexture.devices[0]; // Fallback if no match
         ISO:
+            // hard setting the webcam to use 720x1280 px and 30 fps
             _webCamTexture = new WebCamTexture(_currentDevice.Value.name, 720, 1280, 30);
+            // sets the size of the array to height*width, so it's essentially flattened storage of the pixels
             _textureTransferBuffer = new Color32[_webCamTexture.width * _webCamTexture.height];
-
+            // checks to see if webcamcontrolshader is initialized
             if (_webcamControlShader) {
                 if (_webCamTexture.graphicsFormat == GraphicsFormat.R8G8B8A8_UNorm) {
                     // default behavior
@@ -74,18 +82,24 @@ namespace SLRGTk.Camera {
                 }
             }
         }
-        
+        //starts the logic to turn on the camera
         public void Poll() {
+            // checks to see if the webcam is not initialized
             if (!_webCamTexture) {
+                // called to set up the camera
                 UpdateProps();
             }
             Debug.Log("Polling");
+            // sets the polling on to start receiving images
             polling = true;
+            // starts the camera
             _webCamTexture.Play();
         }
 
         public void Pause() {
+            // turns off polling
             polling = false;
+            // pauses the camera
             _webCamTexture.Pause();
         }
 
@@ -133,30 +147,42 @@ namespace SLRGTk.Camera {
             //     //     Pause();
             //     // }
             // }
+
+            // polling is essentially when we constantly check to see if there are any new frames coming into the camera
             if (polling) {
+                // checks to see if the camera is not instantiated or if it is not playing
                 if(_webCamTexture == null || !_webCamTexture.isPlaying) {
+                    // starts up the camera and sets it up in code with UpdateProps
                     Poll();
                 }
-
+                // checks to see if we got a new image
                 if (_webCamTexture.didUpdateThisFrame && _webCamTexture.width > 0 && _webCamTexture.height > 0) {
+                    // temporary workspace for the image processing
                     RenderTexture tempRT = RenderTexture.GetTemporary(
                         _webCamTexture.videoRotationAngle % 180 == 0 ? _webCamTexture.width : _webCamTexture.height, // webCamTexture.width, 
                         _webCamTexture.videoRotationAngle % 180 == 0 ? _webCamTexture.height : _webCamTexture.width, // webCamTexture.height, 
                         0, GraphicsFormatUtility.GetGraphicsFormat(TextureFormat.RGBA32, true));
+                    // copies the current image from _webCamTexture to the tempRT after applying the webcamControlShader
                     Graphics.Blit(_webCamTexture, tempRT, _webcamControlShader);
+                    // essentially going through all the callbacks and calling them on an image
                     var req = AsyncGPUReadback.Request(tempRT, 0, TextureFormat.RGBA32, (AsyncGPUReadbackRequest request) => {
                         // var dest = new Texture2D(
                         //     _webCamTexture.videoRotationAngle % 180 == 0 ? _webCamTexture.width : _webCamTexture.height, // webCamTexture.width, 
                         //     _webCamTexture.videoRotationAngle % 180 == 0 ? _webCamTexture.height : _webCamTexture.width, // webCamTexture.height, 
                         //     TextureFormat.RGBA32,
                         //     false);                        
+                        // checks through each callback
                         foreach (var callback in _callbackManagerProxy.callbacks) {
+                            // checks to see if GPU is giving some kind of error
                             if (request.hasError)
                                 Debug.LogError("GPU readback error.");
+                            // calls the callback on the image
                             callback.Value(request.GetData<byte>());
                         }
+                        // releasing the temporary workspace to be used in the next run through
                         RenderTexture.ReleaseTemporary(tempRT);
                     });
+                    // pauses the execution until we get the value of req is set and then returns
                     yield return req;
 
                     // foreach (var callback in _callbackManagerProxy.callbacks) {
@@ -213,6 +239,7 @@ namespace SLRGTk.Camera {
                 }
             }
             else {
+                // pauses the camera if we aren't polling/looking for more images right now
                 if (_webCamTexture  && _webCamTexture.isPlaying)
                     Pause();
             }

@@ -111,6 +111,7 @@ namespace SLRGTk.Model {
 
         public void Run(MPVisionInput input)
         {
+            
             var img = new Image(TextureFormat.RGBA32.ToImageFormat(), input.Width, input.Height, TextureFormat.RGBA32.ToImageFormat().NumberOfChannels() * input.Width, input.Image);
             switch (runningMode)
             {
