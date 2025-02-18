@@ -14,7 +14,7 @@ public class MainScript : MonoBehaviour
         engine = gameObject.AddComponent<LiteRTTestEngine>();
         engine.mp.AddCallback("ImagePreview", output => {
             _annotator.UpdateLandmarks(output.Result);
-            _annotator.UpdateImage(output.OriginalImage);
+            _annotator.UpdateImage(output.OriginalImage, output.Width, output.Height);
         });
         _annotator.Show();
     }

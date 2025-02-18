@@ -21,6 +21,7 @@ namespace SLRGTk.Model {
         void Run(I input);
     }
     
+    // image input given to the model
     public class MPVisionInput {
         public NativeArray<byte> Image { get; }
         public long Timestamp { get; }
@@ -28,6 +29,7 @@ namespace SLRGTk.Model {
         public int Width { get; }
         public int Height { get; }
 
+        // constructor
         public MPVisionInput(NativeArray<byte> image, long timestamp, int width, int height) {
             Image = image;
             Timestamp = timestamp;
@@ -36,19 +38,27 @@ namespace SLRGTk.Model {
         }
     }
 
+    // output from the model
     public class MPHandsOutput {
         public NativeArray<byte> OriginalImage { get; }
+        public int Width { get; }
+        public int Height { get; }
         public HandLandmarkerResult Result { get; }
 
-        public MPHandsOutput(NativeArray<byte> originalImage, HandLandmarkerResult result) {
+
+        // constructor
+        public MPHandsOutput(NativeArray<byte> originalImage, HandLandmarkerResult result, int width, int height) {
             OriginalImage = originalImage;
             Result = result;
+            Width = width;
+            Height = height;
         }
     }
     public class MPHands : CallbackManager<MPHandsOutput>, IModel<MPVisionInput>
     {
         private readonly HandLandmarker graph;
-        private readonly ConcurrentDictionary<long, NativeArray<byte>> outputInputLookup = new();
+        // Changing this to store MPInputs
+        private readonly ConcurrentDictionary<long, MPVisionInput> outputInputLookup = new();
         private readonly Mediapipe.Tasks.Vision.Core.RunningMode runningMode;
 
         // Constructor with all relevant parameters including the model asset buffer
@@ -72,7 +82,7 @@ namespace SLRGTk.Model {
 
                         // Trigger callbacks with the current result and input texture
                         foreach (var cb in callbacks.Values) {
-                            cb(new MPHandsOutput(originalImage: texture, result: i));
+                            cb(new MPHandsOutput(originalImage: texture.Image, result: i, texture.Width, texture.Height));
                         }
                         
 
@@ -86,7 +96,7 @@ namespace SLRGTk.Model {
                         foreach (var oldTimestamp in oldTimestamps) {
                             if (!outputInputLookup.TryGetValue(oldTimestamp, out var oldTexture)) continue;
                             // CustomTextureManager.ScheduleDeletion(oldTexture);]
-                            oldTexture.Dispose();
+                            oldTexture.Image.Dispose();
                             outputInputLookup.Remove(oldTimestamp, out _);
                         }
                     },
@@ -119,19 +129,21 @@ namespace SLRGTk.Model {
                     // outputInputLookup[input.Timestamp] = input.Image;
                     graph.DetectAsync(img, input.Timestamp);
                     var img_copy = new NativeArray<byte>(input.Image, Allocator.Persistent);
-                    outputInputLookup[input.Timestamp] = img_copy;
+                    // pass this img_copy into an MPVisionInput variable
+                    MPVisionInput mp_input = new MPVisionInput(img_copy, input.Timestamp, input.Width, input.Height);
+                    outputInputLookup[input.Timestamp] = mp_input;
                     break;
             
                 case Mediapipe.Tasks.Vision.Core.RunningMode.IMAGE:
                     var result = graph.Detect(img);
                     // Trigger callback using inherited method
-                    TriggerCallbacks(new MPHandsOutput(input.Image, result));
+                    TriggerCallbacks(new MPHandsOutput(input.Image, result, input.Width, input.Height));
                     break;
             
                 case Mediapipe.Tasks.Vision.Core.RunningMode.VIDEO:
                     var videoResult = graph.DetectForVideo(img, input.Timestamp);
                     // Trigger callback using inherited method
-                    TriggerCallbacks(new MPHandsOutput(input.Image, videoResult));
+                    TriggerCallbacks(new MPHandsOutput(input.Image, videoResult, input.Width, input.Height));
                     break;
             }
         }

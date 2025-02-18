@@ -24,6 +24,8 @@ namespace SLRGTk.Preview {
         private HandLandmarkerResult? _result;
         private Texture2D _image;
         private NativeArray<byte> _lastNative;
+        private int Width;
+        private int Height;
         
         public bool Visible { get; private set; }
         
@@ -44,7 +46,8 @@ namespace SLRGTk.Preview {
 
         private void Awake() {
             _graphMaterial = new Material(Shader.Find("Nana/HandLandmarkAnnotator"));
-            _image = new(720, 1280, TextureFormat.RGBA32, false);
+            // remove hardcoded element
+            //_image = new(720, 1280, TextureFormat.RGBA32, false);
         }
 
         public void Hide() {
@@ -60,14 +63,31 @@ namespace SLRGTk.Preview {
             _result = result;
         }
         
-        public void UpdateImage(NativeArray<byte> image, bool freeOnUse = true) {
+        public void UpdateImage(NativeArray<byte> image, int width, int height) {
             // if (freeOnUse) CustomTextureManager.ScheduleDeletion(_image);
             // _image = image;
+            if (width != Width || height != Height)
+            {
+                Width = width;
+                Height = height;
+            }
+
+            Debug.Log("Dimensions of the image are " + Width + " x " + Height);
             _lastNative.Dispose();
             _lastNative = image;
         }
         
         void Update() {
+            Debug.Log("This is update");
+            if (_image is null || _image.width != Width || _image.height != Height)
+            {
+                CustomTextureManager.ScheduleDeletion(_image);
+                if (Width > 0 && Height > 0)
+                {
+                    _image = new Texture2D(Width, Height, TextureFormat.RGBA32, false);    
+                }
+                
+            }
             if (!Visible) {
                 screen.enabled = false;
             }
