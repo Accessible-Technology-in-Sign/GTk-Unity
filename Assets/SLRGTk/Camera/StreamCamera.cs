@@ -1,18 +1,19 @@
 using System;
 using System.Collections;
 using SLRGTk.Common;
+using SLRGTk.Model;
 using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 
 namespace SLRGTk.Camera {
-    public class StreamCamera : MonoBehaviour, ICamera, ICallback<NativeArray<byte>> {
+    public class StreamCamera : MonoBehaviour, ICamera, ICallback<MPVisionInput> {
         private static readonly int SwapBR = Shader.PropertyToID("_SwapBR");
         private static readonly int RotationAngle = Shader.PropertyToID("_RotationAngle");
         private static readonly int HorizontalFlip = Shader.PropertyToID("_HorizontalFlip");
 
-        private readonly CallbackManager<NativeArray<byte>> _callbackManagerProxy = new();
+        private readonly CallbackManager<MPVisionInput> _callbackManagerProxy = new();
 
         // Inherit callback manager functionality
         private Material _webcamControlShader;
@@ -177,7 +178,8 @@ namespace SLRGTk.Camera {
                             if (request.hasError)
                                 Debug.LogError("GPU readback error.");
                             // calls the callback on the image
-                            callback.Value(request.GetData<byte>());
+                            // TODO: synchronize in a queue
+                            callback.Value(new MPVisionInput(request.GetData<byte>(), DateTimeOffset.Now.ToUnixTimeMilliseconds(), _webCamTexture.width, _webCamTexture.height));
                         }
                         // releasing the temporary workspace to be used in the next run through
                         RenderTexture.ReleaseTemporary(tempRT);
@@ -249,14 +251,14 @@ namespace SLRGTk.Camera {
             StartCoroutine(Run());
         }
 
-        public void AddCallback(string callbackName, Action<NativeArray<byte>> callback) {
+        public void AddCallback(string callbackName, Action<MPVisionInput> callback) {
             Debug.Log("Adding Callback");
             _callbackManagerProxy.AddCallback(callbackName, callback);
         }
         public void RemoveCallback(string callbackName) {
             _callbackManagerProxy.RemoveCallback(callbackName);
         }
-        public void TriggerCallbacks(NativeArray<byte> value) {
+        public void TriggerCallbacks(MPVisionInput value) {
             _callbackManagerProxy.TriggerCallbacks(value);
         }
         public void ClearCallbacks() {

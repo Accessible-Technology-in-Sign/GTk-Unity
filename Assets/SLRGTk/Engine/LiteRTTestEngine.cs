@@ -21,9 +21,9 @@ namespace SLRGTk.Engine {
                 Resources.Load<TextAsset>("signsList").text.Split("\n").Select(line => line.Trim()).ToList());
             camera = gameObject.AddComponent<StreamCamera>();
             PermissionManager.RequestCameraPermission();
-            camera.AddCallback("ImageReceiver", image => {
+            camera.AddCallback("ImageReceiver", input => {
                 Debug.Log("Event");
-                mp.Run(new MPVisionInput(image, DateTimeOffset.Now.ToUnixTimeMilliseconds(), 720, 1280));
+                mp.Run(input);
             });
             mp.AddCallback("BufferFiller", output => {
                 Debug.Log(output.ToString() + ", " + (output.Result.handLandmarks != null && output.Result.handLandmarks.Count > 0));
